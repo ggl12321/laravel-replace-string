@@ -26,56 +26,66 @@ class ReplaceStringCommand extends Command
     protected $description = 'Command to replace the contents of a specified file with a specific strings.';
 
     /**
-     * 指定のファイルの中身を特定の文字に置換するコマンド
+     * A command that replaces the contents of a specified file with a specific character.
      *
      * @return int
      */
     public function handle()
     {
+        /* Get Arguments */
+        // subjectFile
+        $subjectFilePath = base_path($this->argument('subjectFilePath'));
+        // configFile
         $configFilePath = base_path($this->argument('configFilePath') ?? env('REPLACE_STRING_COMMAND_CONFIG_FILE_RELATIVE_PATH'));
-        if (!$configFilePath) {
-            $this->error('Setting file path not specified.');
-            return 1;
-        }
-
-        // Set if replacement needs to be suspended
-        $enableSuspendReplaceMode = false;
-        $isSuspendingReplace = false;
+        // suspendString, resumeString
         $suspendString = $this->argument('suspendString') ?? env('REPLACE_STRING_COMMAND_SUSPEND_STRING');
         $resumeString = $this->argument('resumeString') ?? env('REPLACE_STRING_COMMAND_RESUME_STRING');
 
+        /* Validation */
+       // subjectFile
+        if (!$subjectFilePath) {
+            $this->error('Subject file path not specified.');
+            return 1;
+        } elseif (!file_exists($subjectFilePath) || !is_file($subjectFilePath) || !is_readable($subjectFilePath)) {
+            $this->error("File does not exist. : {$subjectFilePath}");
+            return 1;
+        }
+        // configFile
+        if (!$configFilePath) {
+            $this->error('Config file path not specified.');
+            return 1;
+        } elseif (!file_exists($configFilePath) || !is_file($configFilePath) || !is_readable($configFilePath)) {
+            $this->error("File does not exist. : {$configFilePath}");
+            return 1;
+        }
+        // suspendString, resumeString
         if (!empty($suspendString) && !empty($resumeString) && $suspendString === $resumeString) {
             $this->error('The same value is set for `suspendString` and `resumeString`.');
             return 1;
-        } else if ($suspendString && $resumeString) {
-            $enableSuspendReplaceMode = true;
         }
 
-        // Get the string to search/replace from the configuration file
+        /* Get, Initialize, Create */
+        // Get configFile
         $configFile = file_get_contents($configFilePath);
-        if (!$configFile) {
-            $this->error('Config file not exist.');
-            return 1;
-        }
         $configFile = mb_convert_encoding($configFile, 'UTF8', 'ASCII,JIS,UTF-8,EUC-JP,SJIS-WIN');
         $searchAndReplaceKeywords = json_decode($configFile, true);
 
-        // Set file to be processed.
-        $subjectFilePath = base_path($this->argument('subjectFilePath'));
-        if (!file_get_contents($subjectFilePath) && is_file($subjectFilePath) && is_writable($subjectFilePath)) {
-            $this->error('File not exist.');
-            return 1;
+        // Initialize suspend and resume
+        $enableSuspendReplaceMode = false;
+        $isSuspendingReplace = false;
+        if ($suspendString && $resumeString) {
+            $enableSuspendReplaceMode = true;
         }
 
-        // Create backup of subject file
+        // Create backup file of subjectFile
         if ($this->option('needBackup')) {
             file_put_contents("$subjectFilePath.bak", file_get_contents($subjectFilePath));
         }
 
-        // Create a file to contain the results of the replacement process
-        $tmpFilePath = "$subjectFilePath.tmp";
-        file_put_contents($tmpFilePath, "");
-        $tfh = fopen($tmpFilePath, "a");
+        // Create a file to store the results
+        $resultFilePath = "$subjectFilePath.tmp";
+        file_put_contents($resultFilePath, "");
+        $tfh = fopen($resultFilePath, "a");
 
         // Replacing process
         if ($enableSuspendReplaceMode) {
@@ -112,11 +122,12 @@ class ReplaceStringCommand extends Command
                 fclose($fh);
             }
         } else {
-            file_put_contents($tmpFilePath,  str_replace(array_keys($searchAndReplaceKeywords), array_values($searchAndReplaceKeywords), file_get_contents($subjectFilePath)));
+            file_put_contents($resultFilePath,  str_replace(array_keys($searchAndReplaceKeywords), array_values($searchAndReplaceKeywords), file_get_contents($subjectFilePath)));
         }
 
+        /* Put file */
         unlink($subjectFilePath);
-        rename($tmpFilePath, $subjectFilePath);
+        rename($resultFilePath, $subjectFilePath);
 
         $this->info('replace:string complete');
         return 0;

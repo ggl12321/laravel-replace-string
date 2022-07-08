@@ -26,51 +26,63 @@ composer.json
   composer install
 ```
 
+### Usage
+
+```
+php artisan replace:string <subjectFilePath>
+    [configFilePath]
+    [suspendString]
+    [resumeString]
+    [--b|needBackup]
+```
+
 ### Examples
 
 #### For the simplest example, replace the contents of a specified file
 
-1. Creating a configuration file.
-   Create a json file anywhere.
-   List the characters to search for and replace in this json file.
-   This file can be placed freely within the project.
+1. Create a configuration file  
+   Create a json file in an arbitrary location.  
+   In this json file, list the characters to be searched/replaced.  
+   This json file can be placed anywhere in the project.
 
 ```json
 {
   "[% foo %]": "{{ $data->getFoo() }}",
   "[% bar %]": "{{ $data->getBar() }}",
-  "[% foobar %]": "{{ $data->getFoobar() }}"
+  "[% baz %]": "{{ $data->getBaz() }}"
 }
 ```
 
-2. Execute the command
-   Replace strings in the specified file.
-   The first argument specifies the path to the file for character substitution.
-   The second argument is the path to the json file you just created. Specify the file path for your project, respectively.The operation is now complete.
+2. Execute command  
+   Replaces strings in the specified file.  
+   The first argument specifies the path to the file for character substitution.  
+   The second argument specifies the path to the json file you just created. Specify the file path for the project, respectively. This completes the operation.
 
 resources/views/foo/bar.blade.php
 
 ```plane
 [% foo %]
 [% bar %]
-[% foobar %]
+[% baz %]
 ```
 
 ```bash
-  php artisan replace:string resources/views/foo/bar.blade.php foobar.json
+  php artisan replace:string resources/views/foo/bar.blade.php baz.json
 ```
 
 ```plane
 {{ $data->getFoo() }}
 {{ $data->getBar() }}
-{{ $data->getFoobar() }}
+{{ $data->getBaz() }}
 ```
 
 #### A more advanced example, replace the contents of a specified file
 
-- The process can be performed without substituting some characters.
-  The third argument of the command specifies the start string of the replacement interruption. The fourth argument of the command specifies the start string for resuming substitution.
-  If you enclose a string in the target file with START and END and then execute the command, only the enclosed string will not be replaced!
+- Some characters can also be processed without replacement.  
+  The third argument of the command specifies the string to start interrupting the substitution.  
+  The fourth argument of the command specifies the string to resume replacement.  
+  If the command is executed after enclosing strings in the file to be processed with the strings specified in the third and fourth arguments, only the enclosed strings will not be replaced.  
+  (When describing in the file to be processed, please start a new line before and after the string to suspend/resume substitution.)
 
 resources/views/foo/bar.blade.php
 
@@ -79,11 +91,11 @@ resources/views/foo/bar.blade.php
 START
 [% bar %]
 END
-[% foobar %]
+[% baz %]
 ```
 
 ```bash
-    php artisan replace:string resources/views/foo/bar.blade.php foobar.json START END
+    php artisan replace:string resources/views/foo/bar.blade.php baz.json START END
 ```
 
 ```plane
@@ -91,11 +103,11 @@ END
 START
 [% bar %]
 END
-{{ $data->getFoobar() }}
+{{ $data->getBaz() }}
 ```
 
-- You can specify arguments to dotenv without specifying optional arguments.
-  Adding the following description to dotenv will execute the command without specifying the second through fourth arguments.
+- When described in dotenv, the command can always be executed without specifying optional arguments.  
+  Specifying the second through fourth arguments in a description to dotenv allows the command to be executed without specifying optional arguments.
 
 ```yaml
 REPLACE_STRING_COMMAND_CONFIG_FILE_RELATIVE_PATH='test2.json'
@@ -103,11 +115,11 @@ REPLACE_STRING_COMMAND_SUSPEND_STRING='START'
 REPLACE_STRING_COMMAND_RESUME_STRING='END'
 ```
 
-- You can keep the file before replacement as a backup.
-  The `-b` option allows you to leave the backup file (.bak) in the same directory as it was before the replacement was performed
+- You can keep a backup of the file to be processed before replacement.  
+  The `-b` option can be used to leave backup files (.bak) in the same directory as before replacement.
 
 ```bash
-    php artisan replace:string resources/views/foo/bar.blade.php foobar.json -b
+    php artisan replace:string resources/views/foo/bar.blade.php baz.json -b
 ```
 
 ```plane

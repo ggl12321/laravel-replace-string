@@ -32,18 +32,11 @@ class ReplaceStringCommand extends Command
      */
     public function handle()
     {
-        /* Get Arguments */
+        /* Get Arguments and Validation */
         // subjectFile
         $subjectFilePath = base_path($this->argument('subjectFilePath'));
-        // configFile
-        $configFilePath = base_path($this->argument('configFilePath') ?? env('REPLACE_STRING_COMMAND_CONFIG_FILE_RELATIVE_PATH'));
-        // suspendString, resumeString
-        $suspendString = $this->argument('suspendString') ?? env('REPLACE_STRING_COMMAND_SUSPEND_STRING');
-        $resumeString = $this->argument('resumeString') ?? env('REPLACE_STRING_COMMAND_RESUME_STRING');
 
-        /* Validation */
-       // subjectFile
-        if (!$subjectFilePath) {
+        if (empty($subjectFilePath)) {
             $this->error('Subject file path not specified.');
             return 1;
         } elseif (!file_exists($subjectFilePath) || !is_file($subjectFilePath) || !is_readable($subjectFilePath)) {
@@ -51,7 +44,9 @@ class ReplaceStringCommand extends Command
             return 1;
         }
         // configFile
-        if (!$configFilePath) {
+        $configFilePath = base_path($this->argument('configFilePath') ?? env('REPLACE_STRING_COMMAND_CONFIG_FILE_RELATIVE_PATH'));
+
+        if (empty($configFilePath)) {
             $this->error('Config file path not specified.');
             return 1;
         } elseif (!file_exists($configFilePath) || !is_file($configFilePath) || !is_readable($configFilePath)) {
@@ -59,6 +54,9 @@ class ReplaceStringCommand extends Command
             return 1;
         }
         // suspendString, resumeString
+        $suspendString = $this->argument('suspendString') ?? env('REPLACE_STRING_COMMAND_SUSPEND_STRING');
+        $resumeString = $this->argument('resumeString') ?? env('REPLACE_STRING_COMMAND_RESUME_STRING');
+
         if (!empty($suspendString) && !empty($resumeString) && $suspendString === $resumeString) {
             $this->error('The same value is set for `suspendString` and `resumeString`.');
             return 1;

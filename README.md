@@ -30,7 +30,7 @@ composer.json
 
 ```
 php artisan replace:string <subjectFilePath>
-    [configFilePath]
+    <configFilePath>
     [suspendString]
     [resumeString]
     [--b|needBackup]
